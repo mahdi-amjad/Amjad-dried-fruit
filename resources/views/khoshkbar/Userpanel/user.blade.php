@@ -166,59 +166,61 @@
                             </h2>
 
                             <div class="space-y-4">
-                                <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h3 class="font-semibold text-main-text">سفارش #۱۲۳۴۵</h3>
-                                            <p class="text-sm text-gray-600">۲۵ دی ۱۴۰۲</p>
-                                        </div>
-                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">تحویل
-                                            شده</span>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <span>آجیل مخلوط پریمیوم (۱ کیلو)</span>
-                                            <span class="font-medium">۲۴۹,۰۰۰ تومان</span>
-                                        </div>
-                                        <div class="flex justify-between">
-                                            <span>بادام ارگانیک (۵۰۰ گرم)</span>
-                                            <span class="font-medium">۱۲۹,۰۰۰ تومان</span>
-                                        </div>
-                                    </div>
-                                    <div
-                                        class="border-t border-gray-200 mt-4 pt-4 flex justify-between font-bold text-main-text">
-                                        <span>مجموع</span>
-                                        <span>۳۷۸,۰۰۰ تومان</span>
-                                    </div>
-                                    <button class="mt-4 text-link-blue hover:text-button-blue transition-colors">مشاهده
-                                        جزئیات</button>
-                                </div>
+                                @foreach ($orders as $order)
+                                    <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                                        <div class="flex justify-between items-start mb-4">
+                                            <div>
+                                                <h3 class="font-semibold text-main-text">سفارش #{{ $order->id }}</h3>
+                                                <p class="text-sm text-gray-600">{{ $order->created_at->format('d M Y') }}
+                                                </p>
+                                            </div>
 
-                                <div class="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                                    <div class="flex justify-between items-start mb-4">
-                                        <div>
-                                            <h3 class="font-semibold text-main-text">سفارش #۱۲۳۴۴</h3>
-                                            <p class="text-sm text-gray-600">۱۸ دی ۱۴۰۲</p>
+                                            @php
+                                                $statusColor = match ($order->status) {
+                                                    'paid' => 'bg-green-100 text-green-800',
+                                                    'pending' => 'bg-yellow-100 text-yellow-800',
+                                                    'failed' => 'bg-red-100 text-red-800',
+                                                    'cancelled' => 'bg-gray-100 text-gray-800',
+                                                    default => 'bg-gray-100 text-gray-800',
+                                                };
+                                                $statusLabel = match ($order->status) {
+                                                    'paid' => 'تحویل شده',
+                                                    'pending' => 'در حال ارسال',
+                                                    'failed' => 'پرداخت ناموفق',
+                                                    'cancelled' => 'لغو شده',
+                                                    default => $order->status,
+                                                };
+                                            @endphp
+
+                                            <span
+                                                class="{{ $statusColor }} px-3 py-1 rounded-full text-sm">{{ $statusLabel }}</span>
                                         </div>
-                                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">در حال
-                                            ارسال</span>
-                                    </div>
-                                    <div class="space-y-2">
-                                        <div class="flex justify-between">
-                                            <span>بسته متنوع بادام هندی</span>
-                                            <span class="font-medium">۱۹۹,۰۰۰ تومان</span>
+
+                                        <div class="space-y-2">
+                                            @foreach ($order->items as $item)
+                                                <div class="flex justify-between">
+                                                    <span>{{ $item->product->name }} ({{ $item->quantity }} ×)</span>
+                                                    <span class="font-medium">{{ number_format($item->total) }}
+                                                        تومان</span>
+                                                </div>
+                                            @endforeach
                                         </div>
+
+                                        <div
+                                            class="border-t border-gray-200 mt-4 pt-4 flex justify-between font-bold text-main-text">
+                                            <span>مجموع</span>
+                                            <span>{{ number_format($order->total_price) }} تومان</span>
+                                        </div>
+
+                                        <a href="{{ route('orders.show', $order->id) }}"
+                                            class="mt-4 inline-block text-link-blue hover:text-button-blue transition-colors">
+                                            مشاهده جزئیات / پیگیری سفارش
+                                        </a>
                                     </div>
-                                    <div
-                                        class="border-t border-gray-200 mt-4 pt-4 flex justify-between font-bold text-main-text">
-                                        <span>مجموع</span>
-                                        <span>۱۹۹,۰۰۰ تومان</span>
-                                    </div>
-                                    <button class="mt-4 text-link-blue hover:text-button-blue transition-colors">پیگیری
-                                        سفارش</button>
-                                </div>
+                                @endforeach
                             </div>
                         </div>
+
                     </div>
 
                     <!-- Favorites Section -->
@@ -381,18 +383,20 @@
                                         <div class="flex justify-between items-start mb-4">
                                             <div>
                                                 <h3 class="font-semibold text-main-text"> {{ $ticket->subject }}</h3>
-                                                <p class="text-sm text-gray-600">{{ Jalalian::fromDateTime($ticket->created_at)->format('Y/m/d') }}</p>
-                                                <p class="text-xs text-gray-500 mt-1">دسته‌بندی: {{  $ticket->category }}</p>
+                                                <p class="text-sm text-gray-600">
+                                                    {{ Jalalian::fromDateTime($ticket->created_at)->format('Y/m/d') }}</p>
+                                                <p class="text-xs text-gray-500 mt-1">دسته‌بندی: {{ $ticket->category }}
+                                                </p>
                                             </div>
                                             <div class="flex flex-col items-end gap-2">
                                                 <span
                                                     class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">پاسخ
                                                     داده شده</span>
                                                 <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">اولویت
-                                                    {{  $ticket->priority }}</span>
+                                                    {{ $ticket->priority }}</span>
                                             </div>
                                         </div>
-                                        <p class="text-gray-700 mb-4">{{ substr($ticket->message,0,110)."..."  }}</p>
+                                        <p class="text-gray-700 mb-4">{{ substr($ticket->message, 0, 110) . '...' }}</p>
                                         <div class="flex gap-3">
                                             <button onclick="viewTicketDetails(1001)"
                                                 class="text-link-blue hover:text-button-blue transition-colors">مشاهده
@@ -684,23 +688,23 @@
                 <div class="space-y-4">
                     <h5 class="font-semibold text-main-text border-b pb-2">تاریخچه مکالمات</h5>
                     ${ticket.messages.map(msg => `
-                                        <div class="border rounded-lg p-4 ${msg.sender === 'شما' ? 'bg-blue-50 mr-8' : 'bg-gray-50 ml-8'}">
-                                            <div class="flex justify-between items-center mb-2">
-                                                <span class="font-medium ${msg.sender === 'شما' ? 'text-blue-700' : 'text-green-700'}">${msg.sender}</span>
-                                                <span class="text-sm text-gray-500">${msg.time}</span>
-                                            </div>
-                                            <p class="text-gray-700">${msg.message}</p>
-                                        </div>
-                                    `).join('')}
+                                                <div class="border rounded-lg p-4 ${msg.sender === 'شما' ? 'bg-blue-50 mr-8' : 'bg-gray-50 ml-8'}">
+                                                    <div class="flex justify-between items-center mb-2">
+                                                        <span class="font-medium ${msg.sender === 'شما' ? 'text-blue-700' : 'text-green-700'}">${msg.sender}</span>
+                                                        <span class="text-sm text-gray-500">${msg.time}</span>
+                                                    </div>
+                                                    <p class="text-gray-700">${msg.message}</p>
+                                                </div>
+                                            `).join('')}
                 </div>
 
                 ${ticket.status !== 'بسته شده' ? `
-                                    <div class="mt-6 border-t pt-6">
-                                        <h5 class="font-semibold text-main-text mb-3">پاسخ جدید</h5>
-                                        <textarea rows="3" placeholder="پیام خود را بنویسید..." class="w-full px-4 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-green-400 outline-none transition-colors mb-3"></textarea>
-                                        <button onclick="sendReply(${ticketId})" class="bg-button-blue hover:bg-link-blue text-white px-4 py-2 rounded transition-colors">ارسال پاسخ</button>
-                                    </div>
-                                ` : ''}
+                                            <div class="mt-6 border-t pt-6">
+                                                <h5 class="font-semibold text-main-text mb-3">پاسخ جدید</h5>
+                                                <textarea rows="3" placeholder="پیام خود را بنویسید..." class="w-full px-4 py-3 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 hover:border-green-400 outline-none transition-colors mb-3"></textarea>
+                                                <button onclick="sendReply(${ticketId})" class="bg-button-blue hover:bg-link-blue text-white px-4 py-2 rounded transition-colors">ارسال پاسخ</button>
+                                            </div>
+                                        ` : ''}
             `;
 
                 document.getElementById('ticketDetailsContent').innerHTML = content;
@@ -716,7 +720,7 @@
                 if (textarea && textarea.value.trim()) {
                     alert(
                         `پاسخ شما برای تیکت #${ticketId} ارسال شد:\n\n"${textarea.value}"\n\nتیم پشتیبانی در اسرع وقت پاسخ خواهد داد.`
-                        );
+                    );
                     textarea.value = '';
                     closeTicketDetails();
                 }
@@ -741,7 +745,7 @@
                 if (followUp && followUp.trim()) {
                     alert(
                         `پیگیری شما برای تیکت #${ticketId} ثبت شد:\n\n"${followUp}"\n\nتیم پشتیبانی در اسرع وقت پاسخ خواهد داد.`
-                        );
+                    );
                 }
             }
 

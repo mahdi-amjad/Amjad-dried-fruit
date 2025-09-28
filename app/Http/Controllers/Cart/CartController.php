@@ -17,7 +17,7 @@ class CartController extends Controller
         $user = auth()->user();
         if (!$user) {
             toast('ابتدا وارد سایت شوید', 'error');
-            return redirect()->route('Login');
+            return redirect()->route('login');
         }
 
         $product = Product::find($productId);
@@ -78,9 +78,7 @@ class CartController extends Controller
         if (!$user) {
             return redirect()->route('login');
         }
-
         $cartItems = CartItem::where('user_id', auth()->id())->get();
-
         $cartTotal       = $cartItems->sum('original_price');   // جمع کل بدون تخفیف
         $finalTotalItems = $cartItems->sum('final_price');      // جمع کل بعد از تخفیف
         $cartDiscount    = $cartTotal - $finalTotalItems;       // تخفیف کل
@@ -91,15 +89,8 @@ class CartController extends Controller
         } else {
            $shipping =  0;
         }
-   
-
         // مبلغ نهایی
         $finalTotal = $finalTotalItems + $shipping;
-
-
-
-
-
         return view('khoshkbar.Cart.index', compact(
             'cartItems',
             'cartTotal',
@@ -113,6 +104,7 @@ class CartController extends Controller
 
     public function removeFromCart($cartItemId)
     {
+
         if (!is_numeric($cartItemId)) {
             return redirect()->route('cart.step1')->with('error', 'شناسه نامعتبر است');
         }

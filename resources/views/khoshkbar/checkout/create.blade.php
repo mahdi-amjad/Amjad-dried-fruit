@@ -108,7 +108,7 @@
                             📝 اطلاعات سفارش
                         </h2>
 
-                        <form method="POST" action="{{ route('cart.placeOrder') }}">
+                        <form method="POST" action="{{ route('cart.placeOrder') }}" id="checkout-form">
                             @csrf
                             <!-- Customer Details -->
                             <div class="mb-8">
@@ -123,7 +123,7 @@
                                             class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary-green focus:border-transparent"
                                             placeholder="نام و نام خانوادگی خود را وارد کنید">
                                     </div>
-                                      <div>
+                                    <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">شماره تلفن *</label>
                                         <input name="phone" type="tel" required
                                             class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary-green focus:border-transparent"
@@ -147,7 +147,7 @@
                                             <option value="rasht">رشت</option>
                                         </select>
                                     </div>
-                                    
+
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">شهر *</label>
                                         <select name="city" required
@@ -174,7 +174,7 @@
                                             class="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-forest-green focus:border-transparent"
                                             placeholder="شماره واحد (اختیاری)">
                                     </div>
-                                  
+
 
 
                                     <div>
@@ -191,10 +191,6 @@
                                     </div>
                                 </div>
                             </div>
-                          <button type="submit" id="place-order"
-                            class="w-full bg-gradient-to-r from-primary-green to-dark-green text-white font-bold py-4 px-6 rounded-xl hover:shadow-lg transition-all duration-300 text-lg">
-                            ثبت سفارش
-                        </button>
                         </form>
                     </div>
                 </div>
@@ -208,41 +204,41 @@
 
                         <div class="space-y-3 mb-6">
                             <div class="text-sm bg-white rounded-lg p-3">
-                                <div class="flex justify-between items-center py-2">
-                                    <span class="text-gray-600">مخلوط آجیل درجه یک (1kg) × 2</span>
-                                    <span class="font-medium">460,000 تومان</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2">
-                                    <span class="text-gray-600">میوه خشک ارگانیک (500g) × 1</span>
-                                    <span class="font-medium">95,000 تومان</span>
-                                </div>
-                                <div class="flex justify-between items-center py-2">
-                                    <span class="text-gray-600">شاه بلوط برشته (500g) × 3</span>
-                                    <span class="font-medium">225,000 تومان</span>
-                                </div>
+                                @foreach ($cartItems as $item)
+                                    <div class="flex justify-between items-center py-2">
+                                        <span class="text-gray-600">
+                                            {{ $item->product->name }} ({{ $item->weight / 1000 }}کیلوگرم) ×
+                                            {{ $item->quantity }}
+                                        </span>
+                                        <span class="font-medium">
+                                            {{ number_format($item->original_price) }} تومان
+                                        </span>
+                                    </div>
+                                @endforeach
                             </div>
                             <hr class="border-gray-200">
-                            <div class="flex justify-between">
+
+                            <div class="flex justify-between items-center">
                                 <span class="text-gray-600">جمع کل:</span>
-                                <span class="font-medium">   {{ number_format(
-                                        $cartItems->sum(function ($item) {
-                                            $units = $item->weight / 500;
-                                            return $item->product->discountedPrice() * $units * $item->quantity;
-                                        }),
-                                    ) }} تومان</span>
+                                <span class="font-bold text-lg" id="cart-total">{{ number_format($cartTotal) }}
+                                    تومان</span>
                             </div>
-                            <div class="flex justify-between">
+                            <div class="flex justify-between items-center">
                                 <span class="text-gray-600">هزینه ارسال:</span>
-                                <span class="font-medium text-primary-green" id="shipping-cost">رایگان</span>
+                                <span class="font-medium text-primary-green" id="shipping-cost">
+                                    {{ $shipping == 0 ? 'رایگان' : number_format($shipping) . ' تومان' }}
+                                </span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">تخفیف:</span>
-                                <span class="font-medium text-golden-yellow">-50,000 تومان</span>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">تخفیف: </span>
+                                <span class="font-medium text-golden-yellow"
+                                    id="cart-discount">{{ number_format($cartDiscount) }} تومان</span>
                             </div>
                             <hr class="border-gray-200">
-                            <div class="flex justify-between text-lg font-bold">
+                            <div class="flex justify-between items-center text-xl font-bold">
                                 <span class="text-gray-800">مبلغ نهایی:</span>
-                                <span class="text-primary-green" id="final-total">730,000 تومان</span>
+                                <span class="text-primary-green" id="cart-payable">{{ number_format($finalTotal) }}
+                                    تومان</span>
                             </div>
                         </div>
 
@@ -259,10 +255,11 @@
 
         <script>
             document.getElementById('place-order').addEventListener('click', function() {
-                document.querySelector('form').submit();
+                document.getElementById('checkout-form').submit();
             });
 
-          
+
+
 
 
 
@@ -335,7 +332,72 @@
                 }
             })();
         </script>
+        <script>
+            // افزایش/کاهش تعداد
+            function updateQuantity(cartItemId, change) {
+                let quantityInput = document.getElementById('quantity' + cartItemId);
+                let weightSelect = document.getElementById('weight-select-' + cartItemId);
+                let quantity = parseInt(quantityInput.value) + change;
+                if (quantity < 1) quantity = 1;
+                quantityInput.value = quantity;
 
+                let weight = parseInt(weightSelect.value) || 500;
+
+                updateCartItem(cartItemId, quantity, weight);
+            }
+
+            // تغییر وزن
+            function updateWeight(cartItemId, newWeight) {
+                let quantityInput = document.getElementById('quantity' + cartItemId);
+                let quantity = parseInt(quantityInput.value) || 1;
+
+                updateCartItem(cartItemId, quantity, parseInt(newWeight));
+            }
+
+            // تابع مشترک بروزرسانی آیتم
+            function updateCartItem(cartItemId, quantity, weight) {
+                fetch(`/cart/update/${cartItemId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            quantity,
+                            weight
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // subtotal آیتم
+                            let subtotalEl = document.querySelector(`#cart-item-${cartItemId} .product-subtotal`);
+                            if (subtotalEl) subtotalEl.innerText = data.newSubtotal + " تومان";
+
+                            // تخفیف آیتم
+                            let discountEl = document.querySelector(`#cart-item-${cartItemId} .product-discount`);
+                            if (discountEl) discountEl.innerText = data.discount + " تومان";
+
+                            // جمع کل بدون تخفیف
+                            let cartTotalEl = document.getElementById('cart-total');
+                            if (cartTotalEl) cartTotalEl.innerText = data.cartTotal + " تومان";
+
+                            // تخفیف کل
+                            let cartDiscountEl = document.getElementById('cart-discount');
+                            if (cartDiscountEl) cartDiscountEl.innerText = data.cartDiscount + " تومان";
+
+                            // هزینه ارسال
+                            let shippingEl = document.getElementById('shipping-cost');
+                            if (shippingEl) shippingEl.innerText = data.shipping;
+
+                            // مبلغ نهایی
+                            let finalTotalEl = document.getElementById('cart-payable');
+                            if (finalTotalEl) finalTotalEl.innerText = data.finalTotal + " تومان";
+                        }
+                    })
+                    .catch(err => console.error('AJAX updateCartItem error:', err));
+            }
+        </script>
 
     </body>
 

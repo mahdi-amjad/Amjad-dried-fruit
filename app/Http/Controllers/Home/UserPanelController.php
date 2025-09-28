@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Home;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -15,10 +16,16 @@ class UserPanelController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
-        $tiket= Ticket::all();
-        $tickets = $user->tickets; 
-        return view('khoshkbar.Userpanel.user', compact('user','tickets'));
+        $tiket = Ticket::all();
+        $tickets = $user->tickets;
+        $orders = Order::where('user_id', $user->id)
+            ->with('items.product')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('khoshkbar.Userpanel.user', compact('user', 'tickets', 'orders'));
     }
+
 
     public function updateProfile(Request $request)
     {
@@ -68,13 +75,12 @@ class UserPanelController extends Controller
             'message' => 'required',
         ]);
         Ticket::create([
-            'user_id' => Auth::id(),      
+            'user_id' => Auth::id(),
             'category' => $request->category,
             'subject' => $request->subject,
             'priority' => $request->priority,
             'message' => $request->message,
         ]);
         return redirect('/user/dashboard');
-
     }
 }

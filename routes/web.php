@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Cart\CartController;
 use App\Http\Controllers\Cart\OrderController;
+use App\Http\Controllers\Cart\PaymentController;
 use App\Http\Controllers\Home\HomeController;
 use App\Http\Controllers\Home\NewsletterController;
 use App\Http\Controllers\Home\UserPanelController;
@@ -124,23 +125,29 @@ Route::prefix('panel')->middleware(['auth', 'can:access-panel'])->group(function
     Route::resource('discounts', DiscountController::class);
 });
 
-// گروه مربوط به سبد خرید
 Route::prefix('cart')->group(function () {
+    Route::get('/', [CartController::class, 'showCart'])->name('cart.step1');
     Route::post('add/{product}', [CartController::class, 'addToCart'])->name('cart.add');
-    Route::get('/', [CartController::class, 'showCart'])->name('cart.step1'); // صفحه سبد خرید
     Route::post('update/{cartItemId}', [CartController::class, 'updateQuantity'])->name('cart.update');
     Route::delete('remove/{cartItemId}', [CartController::class, 'removeFromCart'])->name('cart.remove');
 });
 
-// گروه مربوط به فرآیند سفارش (checkout)
+// سفارش
 Route::prefix('checkout')->group(function () {
-    Route::get('/', [OrderController::class, 'step2'])->name('cart.step2'); // فرم اطلاعات سفارش
-    Route::post('/', [OrderController::class, 'placeOrder'])->name('cart.placeOrder'); // ذخیره سفارش
-    Route::get('/complete', [OrderController::class, 'step3'])->name('cart.step3'); // صفحه اتمام خرید
+    Route::get('/', [OrderController::class, 'step2'])->name('cart.step2'); // فرم سفارش
+    Route::post('/', [OrderController::class, 'placeOrder'])->name('cart.placeOrder'); // ثبت سفارش
+    Route::get('/orders/{order}/{access_token}', [OrderController::class, 'confirm'])->name('order.confirm');
+
+    Route::get('/pay/{token}', [PaymentController::class, 'pay'])->name('checkout.pay'); // پرداخت
+    Route::get('/verify', [PaymentController::class, 'verify'])->name('payment.verify'); // وریفای
+
+
 });
 
-// تأیید نهایی سفارش
-Route::get('/order/confirm/{order}', [OrderController::class, 'confirm'])->name('order.confirm');
+// نمایش جزئیات سفارش (پیگیری سفارش)
+Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
+
+
 
 
 Route::prefix('/')->group(function () {
@@ -169,6 +176,9 @@ Route::prefix('/')->group(function () {
         Route::post('/dashboard', [UserPanelController::class, "updateProfile"])->name('user.profile.update');
         Route::post('/password', [UserPanelController::class, 'updatePassword'])->name('user.password.update');
         Route::post('/tikets', [UserPanelController::class, 'tiketspost'])->name('Tiketspost');
+
+        Route::get('/orders/history', [OrderController::class, 'history'])
+            ->name('orders.history'); // فقط کاربر وارد شده بتواند ببیند
     });
 
     Route::middleware(['auth'])->group(function () {

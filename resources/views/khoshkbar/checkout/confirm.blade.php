@@ -21,18 +21,13 @@
                             'warm-yellow': '#FEF3C7',
                             'soft-gray': '#F8FAFC'
                         },
-                        fontFamily: {
-                            'vazir': ['Vazir', 'sans-serif']
-                        }
                     }
                 }
             }
         </script>
-        <link href="https://fonts.googleapis.com/css2?family=Vazir:wght@300;400;500;600;700&display=swap" rel="stylesheet">
         <style>
             body {
                 box-sizing: border-box;
-                font-family: 'Vazir', sans-serif;
             }
 
             .step-indicator {
@@ -97,88 +92,115 @@
             </div>
         </div>
 
-             <!-- Step 3: Order Complete -->
-        <div  class="max-w-5xl mx-auto px-4 pb-8 ">
+        <!-- Step 3: Order Complete -->
+        <div class="max-w-5xl mx-auto px-4 pb-8">
             <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
+
+                <!-- وضعیت پرداخت -->
                 <div
-                    class="w-24 h-24 bg-gradient-to-br from-primary-green to-dark-green rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                    <span class="text-white text-4xl">✓</span>
+                    class="w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg
+            @if ($order->status == 'paid') bg-gradient-to-br from-primary-green to-dark-green
+            @elseif($order->status == 'failed') bg-gradient-to-br from-red-500 to-red-700
+            @elseif($order->status == 'cancelled') bg-gradient-to-br from-yellow-400 to-yellow-600 @endif
+        ">
+                    <span class="text-white text-4xl">
+                        @if ($order->status == 'paid')
+                            ✓
+                        @elseif($order->status == 'failed')
+                            ✗
+                        @elseif($order->status == 'cancelled')
+                            !
+                        @endif
+                    </span>
                 </div>
 
-                <h2 class="text-3xl font-bold text-gray-800 mb-4">🎉 سفارش شما با موفقیت ثبت شد!</h2>
-                <p class="text-gray-600 mb-8 text-lg">از خرید شما متشکریم. سفارش شما در اسرع وقت پردازش و ارسال خواهد شد.
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">
+                    @if ($order->status == 'paid')
+                        🎉 پرداخت موفق!
+                    @elseif($order->status == 'failed')
+                        ❌ پرداخت ناموفق
+                    @elseif($order->status == 'cancelled')
+                        ⚠️ پرداخت لغو شد
+                    @endif
+                </h2>
+
+                <p class="text-gray-600 mb-8 text-lg">
+                    @if ($order->status == 'paid')
+                        از خرید شما متشکریم. سفارش شما در اسرع وقت پردازش و ارسال خواهد شد.
+                    @elseif($order->status == 'failed')
+                        پرداخت با مشکل مواجه شد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.
+                    @elseif($order->status == 'cancelled')
+                        شما پرداخت را لغو کردید. اگر قصد خرید دارید دوباره اقدام کنید.
+                    @endif
                 </p>
 
+                <!-- جزئیات سفارش -->
                 <div class="bg-gradient-to-br from-light-green to-warm-yellow rounded-xl p-6 mb-8">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
                         <div>
                             <h3 class="font-semibold text-gray-800 mb-3 flex items-center">📋 جزئیات سفارش</h3>
-                            <p class="text-sm text-gray-600 mb-1">شماره سفارش: <span class="font-medium text-gray-800"
-                                    id="order-number">#KA-1403-001234</span></p>
-                            <p class="text-sm text-gray-600 mb-1">تاریخ سفارش: <span class="font-medium text-gray-800"
-                                    id="order-date"></span></p>
-                            <p class="text-sm text-gray-600">مبلغ کل: <span class="font-medium text-primary-green">730,000
-                                    تومان</span></p>
+                            <p class="text-sm text-gray-600 mb-1">شماره سفارش:
+                                <span class="font-medium text-gray-800">{{ $order->order_number ?? $order->id }}</span>
+                            </p>
+                            <p class="text-sm text-gray-600 mb-1">تاریخ سفارش:
+                                <span class="font-medium text-gray-800">{{ $order->created_at_jalali }}</span>
+                            </p>
+                            <p class="text-sm text-gray-600 mb-1">کد پیگیری پرداخت:
+                                <span class="font-medium text-primary-green">{{ $order->ref_id ?? '---' }}</span>
+                            </p>
+                            <p class="text-sm text-gray-600">مبلغ کل:
+                                <span class="font-medium text-primary-green">{{ number_format($order->total_price) }}
+                                    تومان</span>
+                            </p>
                         </div>
                         <div>
                             <h3 class="font-semibold text-gray-800 mb-3 flex items-center">🚚 اطلاعات ارسال</h3>
-                            <p class="text-sm text-gray-600 mb-1">روش ارسال: <span class="font-medium text-gray-800"
-                                    id="delivery-method">ارسال معمولی</span></p>
-                            <p class="text-sm text-gray-600 mb-1">تاریخ تحویل: <span class="font-medium text-gray-800"
-                                    id="delivery-date"></span></p>
-                            <p class="text-sm text-gray-600">روش پرداخت: <span class="font-medium text-gray-800"
-                                    id="payment-method">پرداخت آنلاین</span></p>
+                            <p class="text-sm text-gray-600 mb-1">روش ارسال: <span class="font-medium text-gray-800">ارسال
+                                    معمولی</span></p>
+                            <p class="text-sm text-gray-600 mb-1">روش پرداخت: <span class="font-medium text-gray-800">پرداخت
+                                    آنلاین</span></p>
                         </div>
                     </div>
                 </div>
 
+                <!-- خلاصه خرید -->
                 <div class="bg-gray-50 rounded-xl p-6 mb-8">
                     <h3 class="font-semibold text-gray-800 mb-4 text-right flex items-center">🛒 خلاصه خرید</h3>
                     <div class="space-y-3 text-right">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">مخلوط آجیل درجه یک (1 کیلوگرم) × 2</span>
-                            <span class="font-medium">460,000 تومان</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">میوه خشک ارگانیک (500 گرم) × 1</span>
-                            <span class="font-medium">95,000 تومان</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">شاه بلوط برشته (500 گرم) × 3</span>
-                            <span class="font-medium">225,000 تومان</span>
-                        </div>
+                        @foreach ($order->items as $item)
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">{{ $item->product->name }} × {{ $item->quantity }} - ({{ $item->weight / 1000 }}کیلوگرم)</span>
+                                <span class="font-medium">{{ number_format($item->total) }} تومان</span>
+                            </div>
+                        @endforeach
                         <hr class="border-gray-200">
                         <div class="flex justify-between items-center font-bold text-lg">
                             <span class="text-gray-800">مجموع:</span>
-                            <span class="text-primary-green">730,000 تومان</span>
+                            <span class="text-primary-green">{{ number_format($order->total_price) }} تومان</span>
                         </div>
                     </div>
                 </div>
 
+                <!-- دکمه‌ها -->
                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button id="continue-shopping"
+                    <a href="{{ route('cart.step1') }}"
                         class="bg-gradient-to-r from-primary-green to-dark-green text-white font-bold py-4 px-8 rounded-xl hover:shadow-lg transition-all duration-300 text-lg">
                         ادامه خرید
-                    </button>
-                    <button
+                    </a>
+                    <a href="{{ route('order.confirm', ['order' => $order->id, 'access_token' => $order->access_token]) }}"
                         class="border-2 border-primary-green text-primary-green font-bold py-4 px-8 rounded-xl hover:bg-primary-green hover:text-white transition-all duration-300 text-lg">
                         پیگیری سفارش
-                    </button>
+                    </a>
                 </div>
+
             </div>
         </div>
-
 
 
         <script>
             document.getElementById('place-order').addEventListener('click', function() {
                 document.querySelector('form').submit();
             });
-
-          
-
-
-
             document.getElementById('province-select').addEventListener('change', function() {
                 const selectedProvince = this.value;
                 const citySelect = document.getElementById('city-select');
@@ -248,8 +270,6 @@
                 }
             })();
         </script>
-
-
     </body>
 
     </html>
